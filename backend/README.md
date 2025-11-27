@@ -1,17 +1,15 @@
-# Editor de Música Cifrada - Backend API
+# Moon Tracker - Backend API
 
-Backend REST API for the Editor de Música Cifrada application - a comprehensive music chord catalog system.
+Backend REST API for the Moon Tracker application - an interactive lunar calendar and 3D visualization system.
 
 ## Features
 
-- Song management with lyrics and chords
-- Playlist creation and management
-- User authentication and authorization
-- Song sharing capabilities
-- Export functionality (PDF, text)
-- Category-based organization
-- Automatic chord transposition
-- Advanced search functionality
+- 3D Moon visualization data
+- Lunar phase calculations
+- Interactive lunar calendar
+- Date-based navigation
+- Moonrise and moonset times
+- Phase illumination and age data
 
 ## Technology Stack
 
@@ -19,7 +17,7 @@ Backend REST API for the Editor de Música Cifrada application - a comprehensive
 - **Language**: TypeScript
 - **Framework**: Express.js
 - **Architecture**: REST API
-- **Data Storage**: In-memory (arrays/objects)
+- **Calculations**: SunCalc
 
 ## Project Structure
 
@@ -103,30 +101,13 @@ GET /health
 
 Returns server health status.
 
-**Response:**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "service": "editor-musica-cifrada-api"
-}
-```
-
-### External Routes (Public)
-
-```
-/api/v1/external/*
-```
-
-Public endpoints that don't require authentication.
-
 ### Internal Routes (Authenticated)
 
 ```
-/api/v1/internal/*
+/api/v1/internal/moon-phase
 ```
 
-Protected endpoints requiring user authentication.
+Retrieves moon phase data for specific dates or ranges.
 
 ## Environment Variables
 
@@ -140,64 +121,6 @@ Protected endpoints requiring user authentication.
 | `CACHE_TTL` | Cache time-to-live (seconds) | `3600` |
 | `CACHE_CHECK_PERIOD` | Cache check interval (seconds) | `600` |
 
-## Development Guidelines
-
-### Code Style
-
-- Use TypeScript strict mode
-- Follow ESLint configuration
-- Use 2-space indentation
-- Maximum line length: 120 characters
-- Use single quotes for strings
-
-### Naming Conventions
-
-- Files: camelCase (e.g., `userService.ts`)
-- API routes: kebab-case (e.g., `/song-management`)
-- Functions: camelCase with action verbs
-- Types/Interfaces: PascalCase
-- Constants: UPPER_SNAKE_CASE
-
-### API Response Format
-
-**Success Response:**
-```json
-{
-  "success": true,
-  "data": {},
-  "metadata": {
-    "timestamp": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
-
-**Error Response:**
-```json
-{
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Error description"
-  },
-  "timestamp": "2024-01-01T00:00:00.000Z"
-}
-```
-
-## Testing
-
-Test files should be colocated with source files:
-
-```
-src/services/song/
-├── songLogic.ts
-├── songLogic.test.ts
-└── songTypes.ts
-```
-
 ## License
 
 ISC
-
-## Support
-
-For issues and questions, please open an issue in the repository.

@@ -15,6 +15,8 @@ export interface DatePickerProps {
   className?: string;
   formatStr?: string;
   locale?: Locale;
+  fromDate?: Date;
+  toDate?: Date;
 }
 
 function DatePicker({
@@ -25,29 +27,33 @@ function DatePicker({
   className,
   formatStr = 'PPP',
   locale = ptBR,
+  fromDate,
+  toDate,
 }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant='outline'
+          variant="outline"
           disabled={disabled}
           className={cn(
             'w-[280px] justify-start text-left font-normal',
             !date && 'text-muted-foreground',
-            className,
+            className
           )}
         >
           <CalendarIcon />
           {date ? format(date, formatStr, { locale }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className='w-auto p-0'>
+      <PopoverContent className="w-auto p-0">
         <Calendar
-          mode='single'
+          mode="single"
           selected={date}
           onSelect={onDateChange}
           initialFocus
+          fromDate={fromDate}
+          toDate={toDate}
         />
       </PopoverContent>
     </Popover>

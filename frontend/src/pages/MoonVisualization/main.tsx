@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/core/components/card
 import { Button } from '@/core/components/button';
 import { Alert, AlertDescription, AlertTitle } from '@/core/components/alert';
 import { LoadingSpinner } from '@/core/components/loading-spinner';
+import { DatePicker } from '@/core/components/date-picker';
 import { RotateCcw, Gauge, Info } from 'lucide-react';
 import { useMoonPhase, useMoonVisualizationStore } from '@/domain/moon-phase/_module';
-import { formatDateForAPI, formatDateFull } from '@/domain/moon-phase/utils';
+import { formatDateForAPI } from '@/domain/moon-phase/utils';
 import { MoonCanvas } from './_impl/MoonCanvas';
 import { DateArc } from './_impl/DateArc';
 import { RotationControls } from './_impl/RotationControls';
@@ -13,7 +14,8 @@ import { MoonInfo } from './_impl/MoonInfo';
 import { MoonCalendar } from './_impl/MoonCalendar';
 
 function MoonVisualizationPage() {
-  const { selectedDate, rotationSpeed, resetToToday } = useMoonVisualizationStore();
+  const { selectedDate, setSelectedDate, rotationSpeed, resetToToday } =
+    useMoonVisualizationStore();
 
   const {
     data: moonData,
@@ -27,6 +29,11 @@ function MoonVisualizationPage() {
   useEffect(() => {
     document.title = 'Moon Tracker - Visualização 3D';
   }, []);
+
+  // Calculate date limits (±50 years)
+  const today = new Date();
+  const minDate = new Date(today.getFullYear() - 50, 0, 1);
+  const maxDate = new Date(today.getFullYear() + 50, 11, 31);
 
   if (isError) {
     return (
@@ -60,8 +67,15 @@ function MoonVisualizationPage() {
             {/* Moon Canvas Card */}
             <Card className="border-slate-800 bg-slate-900/50 shadow-2xl backdrop-blur-sm">
               <CardHeader className="border-b border-slate-800">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">{formatDateFull(selectedDate)}</CardTitle>
+                <div className="flex items-center justify-between gap-4">
+                  <DatePicker
+                    date={selectedDate}
+                    onDateChange={(date) => date && setSelectedDate(date)}
+                    fromDate={minDate}
+                    toDate={maxDate}
+                    formatStr="dd/MM/yyyy"
+                    className="w-[240px] border-slate-700 bg-slate-800/50 text-white hover:bg-slate-800 hover:text-white"
+                  />
                   <div className="flex gap-2">
                     <Button
                       variant="outline"

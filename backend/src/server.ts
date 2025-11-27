@@ -1,6 +1,6 @@
 /**
  * @summary
- * Main application entry point for Editor de Música Cifrada backend API.
+ * Main application entry point for Moon Tracker backend API.
  * Configures Express server with security middleware, CORS, compression,
  * and API routing with versioning support.
  *
@@ -41,7 +41,7 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    service: 'editor-musica-cifrada-api',
+    service: 'moon-tracker-api',
   });
 });
 

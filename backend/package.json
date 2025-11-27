@@ -1,7 +1,7 @@
 {
-  "name": "editor-musica-cifrada-backend",
+  "name": "moon-tracker-backend",
   "version": "1.0.0",
-  "description": "Backend API for Editor de Música Cifrada",
+  "description": "Backend API for Moon Tracker - Interactive Lunar Calendar",
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
@@ -10,9 +10,11 @@
     "postinstall": "patch-package"
   },
   "keywords": [
-    "music",
-    "chords",
-    "cifras",
+    "moon",
+    "tracker",
+    "lunar",
+    "calendar",
+    "phases",
     "api"
   ],
   "author": "",
