@@ -1,2 +1,2 @@
 // Domain modules export
-export {};
+export * from './moon-phase/_module';

@@ -7,13 +7,17 @@
  */
 
 import { Router } from 'express';
+import * as moonPhaseController from '@/api/v1/internal/moon-phase/controller';
 
 const router = Router();
 
 /**
- * @remarks
- * Internal routes will be added here as features are implemented.
- * Examples: resource management, user operations, protected data access, etc.
+ * @rule {be-moon-phase-routes}
+ * Moon phase endpoints for 3D visualization feature
  */
+router.get('/moon-phase', moonPhaseController.getHandler);
+router.get('/moon-phase/range', moonPhaseController.getRangeHandler);
+router.post('/moon-phase/rotation', moonPhaseController.postRotationHandler);
+router.post('/moon-phase/date-arc', moonPhaseController.postDateArcHandler);
 
 export default router;
