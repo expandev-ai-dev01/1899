@@ -7,7 +7,7 @@
  * @module services/moonPhase/moonPhaseLogic
  */
 
-import { MoonPhaseData, MoonPhaseCalculation } from './moonPhaseTypes';
+import { MoonPhaseData, MoonPhaseCalculation, MoonPhaseName } from './moonPhaseTypes';
 
 /**
  * @summary
@@ -20,10 +20,6 @@ import { MoonPhaseData, MoonPhaseCalculation } from './moonPhaseTypes';
  * @param {Date} date - Date to calculate moon phase for
  *
  * @returns {MoonPhaseCalculation} Moon phase calculation results
- *
- * @example
- * const phaseData = calculateMoonPhase(new Date('2024-01-15'));
- * console.log(phaseData.phaseName); // "Waxing Crescent"
  */
 export function calculateMoonPhase(date: Date): MoonPhaseCalculation {
   /**
@@ -38,7 +34,7 @@ export function calculateMoonPhase(date: Date): MoonPhaseCalculation {
 
   const timeDiff = date.getTime() - knownNewMoon.getTime();
   const daysSinceNewMoon = timeDiff / (1000 * 60 * 60 * 24);
-  const phase = (daysSinceNewMoon % lunarCycle) / lunarCycle;
+  const phase = (((daysSinceNewMoon % lunarCycle) + lunarCycle) % lunarCycle) / lunarCycle;
 
   /**
    * @rule {fn-illumination-calculation}
@@ -85,11 +81,93 @@ export function calculateMoonPhase(date: Date): MoonPhaseCalculation {
     phaseName = 'Waning Crescent';
   }
 
+  /**
+   * @rule {fn-distance-calculation}
+   * Approximate distance calculation based on anomalistic month (27.55 days)
+   * Perigee: ~362,600 km, Apogee: ~405,400 km
+   */
+  const anomalisticMonth = 27.55455;
+  const ageAnomalistic =
+    ((daysSinceNewMoon % anomalisticMonth) + anomalisticMonth) % anomalisticMonth;
+  const distance = 384400 - 21400 * Math.cos((2 * Math.PI * ageAnomalistic) / anomalisticMonth);
+
   return {
     phase,
     illumination,
     phaseName,
-    age: daysSinceNewMoon % lunarCycle,
+    age: ((daysSinceNewMoon % lunarCycle) + lunarCycle) % lunarCycle,
+    distance: Math.round(distance),
+  };
+}
+
+/**
+ * @summary
+ * Calculates approximate moonrise and moonset times.
+ * Uses a simplified model based on moon phase offset from sun.
+ *
+ * @param {Date} date - Date for calculation
+ * @param {number} phase - Current moon phase (0.0 - 1.0)
+ * @returns {{ rise: string, set: string }} Formatted times
+ */
+function calculateMoonTimes(date: Date, phase: number): { rise: string; set: string } {
+  // Simplified model: New Moon rises at 6am, Full Moon at 6pm
+  // Offset in hours based on phase (0.0 - 1.0)
+  const offsetHours = phase * 24;
+
+  // Base rise time (New Moon) assumed at 06:00 local time
+  let riseHour = 6 + offsetHours;
+  let setHour = riseHour + 12;
+
+  // Normalize to 0-24
+  riseHour = riseHour % 24;
+  setHour = setHour % 24;
+
+  const formatTime = (h: number) => {
+    const hours = Math.floor(h);
+    const minutes = Math.floor((h - hours) * 60);
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  };
+
+  return {
+    rise: formatTime(riseHour),
+    set: formatTime(setHour),
+  };
+}
+
+/**
+ * @summary
+ * Determines the next major moon phase and its date.
+ *
+ * @param {number} currentAge - Current age of moon in days
+ * @param {Date} currentDate - Current date
+ * @returns {{ date: string, name: string, duration: string }} Next phase info
+ */
+function getNextPhaseInfo(
+  currentAge: number,
+  currentDate: Date
+): { date: string; name: string; duration: string } {
+  const lunarCycle = 29.53058867;
+  const majorPhases = [
+    { name: 'First Quarter', age: lunarCycle * 0.25 },
+    { name: 'Full Moon', age: lunarCycle * 0.5 },
+    { name: 'Last Quarter', age: lunarCycle * 0.75 },
+    { name: 'New Moon', age: lunarCycle }, // Cycle restart
+  ];
+
+  // Find next phase
+  let nextPhase = majorPhases.find((p) => p.age > currentAge);
+  if (!nextPhase) nextPhase = majorPhases[0]; // Wrap around
+
+  let daysToNext = nextPhase.age - currentAge;
+  if (daysToNext < 0) daysToNext += lunarCycle;
+
+  const nextDate = new Date(currentDate);
+  nextDate.setDate(nextDate.getDate() + Math.ceil(daysToNext));
+
+  return {
+    date: nextDate.toISOString().split('T')[0],
+    name: nextPhase.name,
+    duration: `${Math.floor(daysToNext)} days ${Math.round((daysToNext % 1) * 24)} hours`,
   };
 }
 
@@ -101,16 +179,16 @@ export function calculateMoonPhase(date: Date): MoonPhaseCalculation {
  * @module services/moonPhase/moonPhaseLogic
  *
  * @param {Date} date - Date to get moon phase data for
+ * @param {object} [location] - Optional location for time calculations
  *
  * @returns {MoonPhaseData} Complete moon phase data
  *
  * @throws {Error} When date is outside allowed range (±50 years)
- *
- * @example
- * const data = getMoonPhaseData(new Date());
- * console.log(data.phaseName); // Current moon phase
  */
-export function getMoonPhaseData(date: Date): MoonPhaseData {
+export function getMoonPhaseData(
+  date: Date,
+  location?: { lat: number; lng: number }
+): MoonPhaseData {
   /**
    * @validation Validate date is within allowed range (±50 years)
    * @throw {dateOutOfRange}
@@ -124,13 +202,22 @@ export function getMoonPhaseData(date: Date): MoonPhaseData {
   }
 
   const calculation = calculateMoonPhase(date);
+  const times = calculateMoonTimes(date, calculation.phase);
+  const nextPhase = getNextPhaseInfo(calculation.age, date);
 
   return {
     date: date.toISOString().split('T')[0],
     phaseName: calculation.phaseName,
-    illumination: Math.round(calculation.illumination * 100),
+    illumination: Math.round(calculation.illumination * 10000) / 100, // 2 decimal places
     age: Math.round(calculation.age * 10) / 10,
     phaseValue: Math.round(calculation.phase * 1000) / 1000,
+    moonRise: times.rise,
+    moonSet: times.set,
+    nextPhaseDate: nextPhase.date,
+    nextPhaseName: nextPhase.name,
+    phaseDuration: nextPhase.duration,
+    distance: calculation.distance,
+    connectionStatus: 'fallback', // Indicating local calculation
   };
 }
 
@@ -148,11 +235,6 @@ export function getMoonPhaseData(date: Date): MoonPhaseData {
  * @returns {MoonPhaseData[]} Array of moon phase data for each day in range
  *
  * @throws {Error} When date range is invalid or exceeds limits
- *
- * @example
- * const start = new Date('2024-01-01');
- * const end = new Date('2024-01-31');
- * const monthData = getMoonPhaseRange(start, end);
  */
 export function getMoonPhaseRange(startDate: Date, endDate: Date): MoonPhaseData[] {
   /**
@@ -196,10 +278,6 @@ export function getMoonPhaseRange(startDate: Date, endDate: Date): MoonPhaseData
  * @param {'slow' | 'fast'} speed - Rotation speed mode
  *
  * @returns {Date} Calculated date based on rotation
- *
- * @example
- * const newDate = calculateDateFromRotation(new Date(), 90, 'slow');
- * // Returns date 3 days from base date (90° / 30° per day)
  */
 export function calculateDateFromRotation(
   baseDate: Date,
@@ -237,10 +315,6 @@ export function calculateDateFromRotation(
  * @param {number} totalDates - Total number of dates to generate
  *
  * @returns {string[]} Array of formatted dates (DD/MM)
- *
- * @example
- * const arcDates = generateDateArc(new Date(), 7, 12);
- * // Returns 12 dates at 7-day intervals
  */
 export function generateDateArc(
   centerDate: Date,

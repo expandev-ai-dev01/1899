@@ -15,6 +15,7 @@ import {
   generateDateArc,
 } from '@/services/moonPhase';
 import { successResponse, errorResponse } from '@/utils/response';
+import { zLatitude, zLongitude } from '@/utils/validation';
 
 /**
  * @api {get} /api/v1/internal/moon-phase Get Moon Phase for Date
@@ -25,12 +26,20 @@ import { successResponse, errorResponse } from '@/utils/response';
  * @apiDescription Retrieves moon phase data for a specific date
  *
  * @apiParam {String} date Date in YYYY-MM-DD format (query parameter)
+ * @apiParam {Number} [lat] Latitude for location-based calculations
+ * @apiParam {Number} [lng] Longitude for location-based calculations
  *
  * @apiSuccess {String} date Date in YYYY-MM-DD format
  * @apiSuccess {String} phaseName Name of the moon phase
  * @apiSuccess {Number} illumination Illumination percentage (0-100)
  * @apiSuccess {Number} age Age of moon in current cycle (days)
  * @apiSuccess {Number} phaseValue Phase value (0.0 to 1.0)
+ * @apiSuccess {String} moonRise Moonrise time (HH:MM)
+ * @apiSuccess {String} moonSet Moonset time (HH:MM)
+ * @apiSuccess {String} nextPhaseDate Date of next phase change
+ * @apiSuccess {String} nextPhaseName Name of next phase
+ * @apiSuccess {String} phaseDuration Duration of current phase
+ * @apiSuccess {Number} distance Distance from Earth in km
  *
  * @apiError {String} ValidationError Invalid date format or out of range
  * @apiError {String} ServerError Internal server error
@@ -41,6 +50,8 @@ export async function getHandler(req: Request, res: Response, next: NextFunction
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional(),
+    lat: zLatitude.optional(),
+    lng: zLongitude.optional(),
   });
 
   try {
@@ -56,7 +67,10 @@ export async function getHandler(req: Request, res: Response, next: NextFunction
       return;
     }
 
-    const data = getMoonPhaseData(targetDate);
+    const location =
+      validated.lat && validated.lng ? { lat: validated.lat, lng: validated.lng } : undefined;
+
+    const data = getMoonPhaseData(targetDate, location);
     res.json(successResponse(data));
   } catch (error: any) {
     if (error.message === 'dateOutOfRange') {

@@ -39,3 +39,15 @@ export const zPositiveInt = z.number().int().positive();
  * Validates non-negative integer
  */
 export const zNonNegativeInt = z.number().int().min(0);
+
+/**
+ * @summary
+ * Validates latitude (-90 to 90)
+ */
+export const zLatitude = z.coerce.number().min(-90).max(90);
+
+/**
+ * @summary
+ * Validates longitude (-180 to 180)
+ */
+export const zLongitude = z.coerce.number().min(-180).max(180);

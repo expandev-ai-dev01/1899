@@ -7,6 +7,12 @@ export interface MoonPhaseData {
   illumination: number;
   age: number;
   phaseValue: number;
+  moonRise?: string;
+  moonSet?: string;
+  nextPhaseDate?: string;
+  nextPhaseName?: string;
+  phaseDuration?: string;
+  distance?: number;
 }
 
 export interface MoonPhaseRotationRequest {

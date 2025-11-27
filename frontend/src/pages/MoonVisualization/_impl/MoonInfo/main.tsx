@@ -1,6 +1,17 @@
-import { Moon, Sparkles, Calendar, TrendingUp } from 'lucide-react';
+import {
+  Moon,
+  Sparkles,
+  Calendar,
+  TrendingUp,
+  Sunrise,
+  Sunset,
+  Clock,
+  Ruler,
+  ArrowRight,
+} from 'lucide-react';
 import { Progress } from '@/core/components/progress';
 import { Separator } from '@/core/components/separator';
+import { formatDateForDisplay } from '@/domain/moon-phase/utils';
 import type { MoonInfoProps } from './types';
 
 function MoonInfo({ moonData }: MoonInfoProps) {
@@ -37,27 +48,92 @@ function MoonInfo({ moonData }: MoonInfoProps) {
 
       <Separator className="bg-slate-700" />
 
-      {/* Age */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-blue-400" />
-          <span className="text-sm font-medium text-slate-300">Idade da Lua</span>
+      {/* Sun Cycle (Rise/Set) */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1 rounded-md border border-slate-700 bg-slate-800/30 p-3">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Sunrise className="h-4 w-4 text-orange-400" />
+            <span className="text-xs font-medium">Nascer</span>
+          </div>
+          <span className="text-lg font-bold text-white">
+            {moonData.moonRise || 'Indisponível'}
+          </span>
         </div>
-        <span className="text-lg font-bold text-white">{moonData.age.toFixed(1)} dias</span>
+        <div className="flex flex-col gap-1 rounded-md border border-slate-700 bg-slate-800/30 p-3">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Sunset className="h-4 w-4 text-orange-400" />
+            <span className="text-xs font-medium">Ocaso</span>
+          </div>
+          <span className="text-lg font-bold text-white">{moonData.moonSet || 'Indisponível'}</span>
+        </div>
       </div>
 
-      {/* Phase Value */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-purple-400" />
-          <span className="text-sm font-medium text-slate-300">Valor da Fase</span>
+      {/* Next Phase */}
+      {moonData.nextPhaseName && moonData.nextPhaseDate && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <ArrowRight className="h-4 w-4 text-green-400" />
+            <span className="text-sm font-medium text-slate-300">Próxima Fase</span>
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-slate-700 bg-slate-800/30 p-3">
+            <span className="font-medium text-white">{moonData.nextPhaseName}</span>
+            <span className="text-sm text-slate-400">
+              {formatDateForDisplay(moonData.nextPhaseDate)}
+            </span>
+          </div>
         </div>
-        <span className="text-lg font-bold text-white">{moonData.phaseValue.toFixed(3)}</span>
+      )}
+
+      <Separator className="bg-slate-700" />
+
+      {/* Detailed Metrics */}
+      <div className="grid gap-3">
+        {/* Age */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-blue-400" />
+            <span className="text-sm font-medium text-slate-300">Idade da Lua</span>
+          </div>
+          <span className="text-sm font-bold text-white">{moonData.age.toFixed(1)} dias</span>
+        </div>
+
+        {/* Phase Value */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-purple-400" />
+            <span className="text-sm font-medium text-slate-300">Valor da Fase</span>
+          </div>
+          <span className="text-sm font-bold text-white">{moonData.phaseValue.toFixed(3)}</span>
+        </div>
+
+        {/* Distance */}
+        {moonData.distance && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Ruler className="h-4 w-4 text-red-400" />
+              <span className="text-sm font-medium text-slate-300">Distância</span>
+            </div>
+            <span className="text-sm font-bold text-white">
+              {moonData.distance.toLocaleString('pt-BR')} km
+            </span>
+          </div>
+        )}
+
+        {/* Duration */}
+        {moonData.phaseDuration && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-cyan-400" />
+              <span className="text-sm font-medium text-slate-300">Duração da Fase</span>
+            </div>
+            <span className="text-sm font-bold text-white">{moonData.phaseDuration}</span>
+          </div>
+        )}
       </div>
 
       <Separator className="bg-slate-700" />
 
-      {/* Additional Info */}
+      {/* Description */}
       <div className="rounded-lg border border-slate-700 bg-slate-800/30 p-4">
         <div className="mb-2 flex items-center gap-2">
           <Moon className="h-4 w-4 text-slate-400" />

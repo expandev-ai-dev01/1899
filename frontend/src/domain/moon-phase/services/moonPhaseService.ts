@@ -18,8 +18,12 @@ export const moonPhaseService = {
   /**
    * Get moon phase data for a specific date
    */
-  async getPhaseData(date?: string): Promise<MoonPhaseData> {
-    const params = date ? { date } : {};
+  async getPhaseData(date?: string, lat?: number, lng?: number): Promise<MoonPhaseData> {
+    const params: Record<string, any> = {};
+    if (date) params.date = date;
+    if (lat !== undefined) params.lat = lat;
+    if (lng !== undefined) params.lng = lng;
+
     const { data } = await authenticatedClient.get('/moon-phase', { params });
     return data.data;
   },

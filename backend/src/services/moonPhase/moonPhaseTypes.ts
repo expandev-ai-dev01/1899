@@ -14,12 +14,14 @@
  * @property {number} illumination - Illumination percentage (0.0 to 1.0)
  * @property {string} phaseName - Name of the moon phase
  * @property {number} age - Age of moon in current cycle (days)
+ * @property {number} distance - Approximate distance in km
  */
 export interface MoonPhaseCalculation {
   phase: number;
   illumination: number;
   phaseName: string;
   age: number;
+  distance: number;
 }
 
 /**
@@ -31,6 +33,13 @@ export interface MoonPhaseCalculation {
  * @property {number} illumination - Illumination percentage (0-100)
  * @property {number} age - Age of moon in current cycle (days)
  * @property {number} phaseValue - Phase value (0.0 to 1.0)
+ * @property {string} [moonRise] - Moonrise time (HH:MM)
+ * @property {string} [moonSet] - Moonset time (HH:MM)
+ * @property {string} [nextPhaseDate] - Date of next phase change
+ * @property {string} [nextPhaseName] - Name of next phase
+ * @property {string} [phaseDuration] - Approximate duration of current phase
+ * @property {number} [distance] - Distance from Earth in km
+ * @property {string} [connectionStatus] - Status of data source (online/offline)
  */
 export interface MoonPhaseData {
   date: string;
@@ -38,6 +47,13 @@ export interface MoonPhaseData {
   illumination: number;
   age: number;
   phaseValue: number;
+  moonRise?: string;
+  moonSet?: string;
+  nextPhaseDate?: string;
+  nextPhaseName?: string;
+  phaseDuration?: string;
+  distance?: number;
+  connectionStatus?: 'online' | 'offline' | 'fallback';
 }
 
 /**
