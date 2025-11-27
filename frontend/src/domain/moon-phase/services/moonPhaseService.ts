@@ -29,6 +29,15 @@ export const moonPhaseService = {
   },
 
   /**
+   * Get moon phase data for a date range
+   */
+  async getPhaseRange(startDate: string, endDate: string): Promise<MoonPhaseData[]> {
+    const params = { startDate, endDate };
+    const { data } = await authenticatedClient.get('/moon-phase/range', { params });
+    return data.data;
+  },
+
+  /**
    * Calculate date from rotation angle and speed
    */
   async calculateDateFromRotation(

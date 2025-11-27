@@ -10,6 +10,7 @@ import { MoonCanvas } from './_impl/MoonCanvas';
 import { DateArc } from './_impl/DateArc';
 import { RotationControls } from './_impl/RotationControls';
 import { MoonInfo } from './_impl/MoonInfo';
+import { MoonCalendar } from './_impl/MoonCalendar';
 
 function MoonVisualizationPage() {
   const { selectedDate, rotationSpeed, resetToToday } = useMoonVisualizationStore();
@@ -54,7 +55,7 @@ function MoonVisualizationPage() {
 
         {/* Main Content */}
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          {/* Left Column - 3D Visualization */}
+          {/* Left Column - 3D Visualization & Calendar */}
           <div className="space-y-6">
             {/* Moon Canvas Card */}
             <Card className="border-slate-800 bg-slate-900/50 shadow-2xl backdrop-blur-sm">
@@ -89,6 +90,9 @@ function MoonVisualizationPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Calendar Component */}
+            <MoonCalendar />
 
             {/* Rotation Controls */}
             <Card className="border-slate-800 bg-slate-900/50 shadow-xl backdrop-blur-sm">

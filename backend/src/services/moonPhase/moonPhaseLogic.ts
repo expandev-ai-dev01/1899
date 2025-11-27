@@ -2,17 +2,17 @@
  * @summary
  * Moon phase calculation and data management logic.
  * Provides business logic for calculating lunar phases, illumination percentages,
- * and date-based moon phase information without external API dependencies.
+ * and date-based moon phase information using astronomical algorithms via SunCalc.
  *
  * @module services/moonPhase/moonPhaseLogic
  */
 
+import SunCalc from 'suncalc';
 import { MoonPhaseData, MoonPhaseCalculation, MoonPhaseName } from './moonPhaseTypes';
 
 /**
  * @summary
- * Calculates the moon phase for a given date using astronomical algorithms.
- * Based on the lunar cycle of approximately 29.53 days.
+ * Calculates the moon phase for a given date using SunCalc library.
  *
  * @function calculateMoonPhase
  * @module services/moonPhase/moonPhaseLogic
@@ -24,43 +24,26 @@ import { MoonPhaseData, MoonPhaseCalculation, MoonPhaseName } from './moonPhaseT
 export function calculateMoonPhase(date: Date): MoonPhaseCalculation {
   /**
    * @rule {fn-moon-phase-calculation}
-   * Calculate moon phase using astronomical formula:
-   * - Known new moon reference: January 6, 2000, 18:14 UTC
-   * - Lunar cycle: 29.53058867 days (synodic month)
-   * - Phase calculation based on days since reference
+   * Use SunCalc to get precise moon illumination data:
+   * - fraction: illuminated fraction of the moon; varies from 0.0 (new moon) to 1.0 (full moon)
+   * - phase: moon phase; varies from 0.0 to 1.0
+   * - angle: midpoint angle in radians of the illuminated limb of the moon
    */
-  const knownNewMoon = new Date('2000-01-06T18:14:00Z');
-  const lunarCycle = 29.53058867;
-
-  const timeDiff = date.getTime() - knownNewMoon.getTime();
-  const daysSinceNewMoon = timeDiff / (1000 * 60 * 60 * 24);
-  const phase = (((daysSinceNewMoon % lunarCycle) + lunarCycle) % lunarCycle) / lunarCycle;
-
-  /**
-   * @rule {fn-illumination-calculation}
-   * Calculate illumination percentage:
-   * - 0.0 = New Moon (0% illuminated)
-   * - 0.5 = Full Moon (100% illuminated)
-   * - Formula accounts for waxing and waning phases
-   */
-  let illumination: number;
-  if (phase < 0.5) {
-    illumination = phase * 2;
-  } else {
-    illumination = (1 - phase) * 2;
-  }
+  const moonData = SunCalc.getMoonIllumination(date);
+  const phase = moonData.phase;
+  const illumination = moonData.fraction;
 
   /**
    * @rule {fn-phase-name-determination}
-   * Determine phase name based on position in lunar cycle:
-   * - New Moon: 0.0 - 0.033 (0-3.3%)
-   * - Waxing Crescent: 0.033 - 0.216 (3.3-21.6%)
-   * - First Quarter: 0.216 - 0.283 (21.6-28.3%)
-   * - Waxing Gibbous: 0.283 - 0.466 (28.3-46.6%)
-   * - Full Moon: 0.466 - 0.533 (46.6-53.3%)
-   * - Waning Gibbous: 0.533 - 0.716 (53.3-71.6%)
-   * - Last Quarter: 0.716 - 0.783 (71.6-78.3%)
-   * - Waning Crescent: 0.783 - 1.0 (78.3-100%)
+   * Determine phase name based on position in lunar cycle (0.0 to 1.0):
+   * - New Moon: 0.0 - 0.033 (0-3.3%) or > 0.967
+   * - Waxing Crescent: 0.033 - 0.216
+   * - First Quarter: 0.216 - 0.283
+   * - Waxing Gibbous: 0.283 - 0.466
+   * - Full Moon: 0.466 - 0.533
+   * - Waning Gibbous: 0.533 - 0.716
+   * - Last Quarter: 0.716 - 0.783
+   * - Waning Crescent: 0.783 - 0.967
    */
   let phaseName: string;
   if (phase < 0.033 || phase > 0.967) {
@@ -82,10 +65,21 @@ export function calculateMoonPhase(date: Date): MoonPhaseCalculation {
   }
 
   /**
+   * @rule {fn-age-calculation}
+   * Calculate approximate moon age in days (0 to ~29.53)
+   */
+  const lunarCycle = 29.53058867;
+  const age = phase * lunarCycle;
+
+  /**
    * @rule {fn-distance-calculation}
    * Approximate distance calculation based on anomalistic month (27.55 days)
    * Perigee: ~362,600 km, Apogee: ~405,400 km
+   * Note: SunCalc does not provide distance directly, using approximation formula.
    */
+  const knownNewMoon = new Date('2000-01-06T18:14:00Z');
+  const timeDiff = date.getTime() - knownNewMoon.getTime();
+  const daysSinceNewMoon = timeDiff / (1000 * 60 * 60 * 24);
   const anomalisticMonth = 27.55455;
   const ageAnomalistic =
     ((daysSinceNewMoon % anomalisticMonth) + anomalisticMonth) % anomalisticMonth;
@@ -95,42 +89,37 @@ export function calculateMoonPhase(date: Date): MoonPhaseCalculation {
     phase,
     illumination,
     phaseName,
-    age: ((daysSinceNewMoon % lunarCycle) + lunarCycle) % lunarCycle,
+    age,
     distance: Math.round(distance),
   };
 }
 
 /**
  * @summary
- * Calculates approximate moonrise and moonset times.
- * Uses a simplified model based on moon phase offset from sun.
+ * Calculates moonrise and moonset times for a specific location.
  *
  * @param {Date} date - Date for calculation
- * @param {number} phase - Current moon phase (0.0 - 1.0)
- * @returns {{ rise: string, set: string }} Formatted times
+ * @param {object} [location] - Latitude and longitude
+ * @returns {{ rise: string, set: string }} Formatted times (HH:MM) or placeholder
  */
-function calculateMoonTimes(date: Date, phase: number): { rise: string; set: string } {
-  // Simplified model: New Moon rises at 6am, Full Moon at 6pm
-  // Offset in hours based on phase (0.0 - 1.0)
-  const offsetHours = phase * 24;
+function calculateMoonTimes(
+  date: Date,
+  location?: { lat: number; lng: number }
+): { rise: string; set: string } {
+  if (!location) {
+    return { rise: '--:--', set: '--:--' };
+  }
 
-  // Base rise time (New Moon) assumed at 06:00 local time
-  let riseHour = 6 + offsetHours;
-  let setHour = riseHour + 12;
+  const times = SunCalc.getMoonTimes(date, location.lat, location.lng);
 
-  // Normalize to 0-24
-  riseHour = riseHour % 24;
-  setHour = setHour % 24;
-
-  const formatTime = (h: number) => {
-    const hours = Math.floor(h);
-    const minutes = Math.floor((h - hours) * 60);
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  const formatTime = (d?: Date) => {
+    if (!d || isNaN(d.getTime())) return '--:--';
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   return {
-    rise: formatTime(riseHour),
-    set: formatTime(setHour),
+    rise: formatTime(times.rise),
+    set: formatTime(times.set),
   };
 }
 
@@ -202,7 +191,7 @@ export function getMoonPhaseData(
   }
 
   const calculation = calculateMoonPhase(date);
-  const times = calculateMoonTimes(date, calculation.phase);
+  const times = calculateMoonTimes(date, location);
   const nextPhase = getNextPhaseInfo(calculation.age, date);
 
   return {
@@ -217,7 +206,7 @@ export function getMoonPhaseData(
     nextPhaseName: nextPhase.name,
     phaseDuration: nextPhase.duration,
     distance: calculation.distance,
-    connectionStatus: 'fallback', // Indicating local calculation
+    connectionStatus: 'online', // Using SunCalc library
   };
 }
 
@@ -258,6 +247,8 @@ export function getMoonPhaseRange(startDate: Date, endDate: Date): MoonPhaseData
   const currentDate = new Date(startDate);
 
   while (currentDate <= endDate) {
+    // Note: Range calculation typically doesn't include location-specific times
+    // to optimize performance for calendar views
     result.push(getMoonPhaseData(new Date(currentDate)));
     currentDate.setDate(currentDate.getDate() + 1);
   }
